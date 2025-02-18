@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dress Color Matcher</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: "Poppins", sans-serif;
+      }
+      body {
+        background: linear-gradient(120deg, #f6d365, #fda085);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        transition: background 0.3s;
+      }
+      .container {
+        width: 90%;
+        max-width: 900px;
+        padding: 30px;
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        text-align: center;
+      }
+      h1 {
+        color: #ff7e67;
+        font-size: 2.5em;
+        margin-bottom: 20px;
+      }
+      .upload-section {
+        margin: 20px 0;
+        padding: 15px;
+        border-radius: 10px;
+        background: #ffd3b6;
+      }
+      .upload-section:hover {
+        background: #ffc1a6;
+      }
+      .upload-section label {
+        font-weight: bold;
+        color: #ff7e67;
+        font-size: 1.2em;
+      }
+      .upload-section input {
+        margin-top: 10px;
+      }
+      .images-preview {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-top: 15px;
+      }
+      .images-preview img {
+        width: 100px;
+        height: 150px;
+        border-radius: 8px;
+        border: 3px solid #ff7e67;
+      }
+      .button {
+        background: #ff7e67;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 1em;
+        cursor: pointer;
+        margin-top: 20px;
+        transition: background 0.3s, transform 0.2s;
+      }
+      .button:hover {
+        background: #ff6a53;
+        transform: scale(1.05);
+      }
+      .best-match {
+        display: none;
+        margin-top: 25px;
+        padding: 20px;
+        border-radius: 15px;
+        background: #fff5e1;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      }
+      .best-match img {
+        width: 150px;
+        height: 200px;
+        border-radius: 10px;
+        transition: transform 0.3s ease;
+      }
+      .best-match:hover img {
+        transform: scale(1.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Dress Color Matcher</h1>
+
+      <!-- Existing Dress Section -->
+      <div class="upload-section">
+        <label for="existingDress">Upload Your Existing Dress:</label>
+        <input
+          type="file"
+          id="existingDress"
+          accept="image/*"
+          onchange="previewImage(this, 'existingDressPreview')"
+        />
+        <div id="existingDressPreview" class="images-preview"></div>
+      </div>
+
+      <!-- New Dresses Section -->
+      <div class="upload-section">
+        <label for="newDresses">Upload New Dresses You Like (Multiple):</label>
+        <input
+          type="file"
+          id="newDresses"
+          accept="image/*"
+          multiple
+          onchange="previewImages(this, 'newDressesPreview')"
+        />
+        <div id="newDressesPreview" class="images-preview"></div>
+      </div>
+
+      <!-- Match Button -->
+      <button class="button" onclick="findBestMatch()">Find Best Match</button>
+
+      <!-- Match Result Display -->
+      <div id="matchResult" class="match-results">Matching dresses...</div>
+
+      <!-- Best Match Display -->
+      <div id="bestMatch" class="best-match" style="display: none">
+        <p>Your Best Match:</p>
+        <img id="bestMatchImage" src="" alt="Best Matched Dress" />
+      </div>
+    </div>
+
+    <script>
+      function previewImage(input, previewId) {
+        const previewDiv = document.getElementById(previewId);
+        previewDiv.innerHTML = "";
+        if (input.files && input.files[0]) {
+          const img = document.createElement("img");
+          img.src = URL.createObjectURL(input.files[0]);
+          previewDiv.appendChild(img);
+        }
+      }
+
+      function previewImages(input, previewId) {
+        const previewDiv = document.getElementById(previewId);
+        previewDiv.innerHTML = "";
+        for (const file of input.files) {
+          const img = document.createElement("img");
+          img.src = URL.createObjectURL(file);
+          previewDiv.appendChild(img);
+        }
+      }
+
+      async function findBestMatch() {
+        const existingDress = document.getElementById("existingDress").files[0];
+        const newDresses = document.getElementById("newDresses").files;
+
+        if (!existingDress || newDresses.length === 0) {
+          alert("Please upload both existing and new dresses.");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("existingDress", existingDress);
+        for (const file of newDresses) {
+          formData.append("newDresses", file);
+        }
+
+        const response = await fetch("/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await response.json();
+        const bestMatchFilename = result.best_match;
+
+        if (bestMatchFilename) {
+          document.getElementById("matchResult").style.display = "none";
+          document.getElementById(
+            "bestMatchImage"
+          ).src = `/uploads/${bestMatchFilename}`;
+          document.getElementById("bestMatch").style.display = "block";
+        } else {
+          document.getElementById("matchResult").innerText = "No match found.";
+          document.getElementById("matchResult").style.display = "block";
+        }
+      }
+    </script>
+  </body>
+</html>
